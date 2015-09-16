@@ -1,0 +1,29 @@
+{
+    "name" : "intriro/symfony-extensions",
+    "license" : "proprietary",
+    "type" : "symfony-bundle",
+    "description" : "Symfony extensions",
+    "keywords" : [],
+    "authors" : [{
+            "name" : "alsar",
+            "email" : "ales@intriro.com"
+        }
+    ],
+    "autoload" : {
+        "psr-4" : {
+            "Intriro\\Symfony\\" : "src"
+        }
+    },
+    "require" : {
+        "php" : ">=5.4",
+        "symfony/framework-bundle": "~2.2"
+    },
+    "config" : {
+        "bin-dir" : "bin"
+    },
+    "extra" : {
+        "branch-alias" : {
+            "dev-master" : "0.1.x-dev"
+        }
+    }
+}
