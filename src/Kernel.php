@@ -6,6 +6,14 @@ use Symfony\Component\Config\Loader\LoaderInterface;
 
 abstract class Kernel extends BaseKernel
 {
+    /**
+     * @var string
+     */
+    private $vagrantTmpDir = '/dev/shm';
+
+    /**
+     * {@inheritdoc}
+     */
     public function registerContainerConfiguration(LoaderInterface $loader)
     {
         $loader->load($this->getResourceDir().'/config/config_'.$this->getEnvironment().'.yml');
@@ -41,8 +49,8 @@ abstract class Kernel extends BaseKernel
      */
     public function getCacheDir()
     {
-        if (in_array($this->environment, ['dev', 'test']) && getenv('VAGRANT')) {
-            return '/dev/shm/sf/cache/' .  $this->environment;
+        if ($this->isVagrantEnvironment()) {
+            return $this->vagrantTmpDir . '/sf/cache/' . $this->environment;
         }
 
         return parent::getCacheDir();
@@ -53,15 +61,26 @@ abstract class Kernel extends BaseKernel
      */
     public function getLogDir()
     {
-        if (in_array($this->environment, ['dev', 'test']) && getenv('VAGRANT')) {
-            return '/dev/shm/sf/logs';
+        if ($this->isVagrantEnvironment()) {
+            return $this->vagrantTmpDir . '/sf/logs/' . $this->environment;
         }
 
         return parent::getLogDir();
     }
 
+    /**
+     * @return string
+     */
     public function getResourceDir()
     {
         return $this->rootDir.'/../resources';
+    }
+
+    /**
+     * @return boolean
+     */
+    protected function isVagrantEnvironment()
+    {
+        return getenv('VAGRANT') == true && is_dir($this->vagrantTmpDir);
     }
 }
