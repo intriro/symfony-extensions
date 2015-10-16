@@ -53,7 +53,7 @@ abstract class Kernel extends BaseKernel
             return $this->vagrantTmpDir . '/sf/cache/' . $this->environment;
         }
 
-        return parent::getCacheDir();
+        return $this->getVarDir().'/cache/'.$this->environment;
     }
 
     /**
@@ -62,10 +62,10 @@ abstract class Kernel extends BaseKernel
     public function getLogDir()
     {
         if ($this->isVagrantEnvironment()) {
-            return $this->vagrantTmpDir . '/sf/logs/' . $this->environment;
+            return $this->vagrantTmpDir . '/sf/logs';
         }
 
-        return parent::getLogDir();
+        return $this->getVarDir().'/logs';
     }
 
     /**
