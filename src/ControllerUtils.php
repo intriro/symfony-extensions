@@ -1,42 +1,37 @@
 <?php
 namespace Intriro\Symfony;
 
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\DependencyInjection\ContainerAwareInterface;
+use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
-use Symfony\Component\Form\FormTypeInterface;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Form;
+use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Security\Core\User\UserInterface;
+use Doctrine\Bundle\DoctrineBundle\Registry;
 
 /**
  * Controller Utilities Service.
  *
  * Contains most of the helper methods present in the FrameworkBundle base Controller.
  */
-class ControllerUtils
+class ControllerUtils implements ContainerAwareInterface
 {
-    /**
-     * @var ContainerInterface
-     */
-    private $container;
-
-    public function __construct(ContainerInterface $container)
-    {
-        $this->container = $container;
-    }
+    use ContainerAwareTrait;
 
     /**
      * Generates a URL from the given parameters.
      *
-     * @param string         $route         The name of the route
-     * @param mixed          $parameters    An array of parameters
-     * @param bool|string $referenceType The type of reference (one of the constants in UrlGeneratorInterface)
+     * @param string $route         The name of the route
+     * @param mixed  $parameters    An array of parameters
+     * @param int    $referenceType The type of reference (one of the constants in UrlGeneratorInterface)
      *
      * @return string The generated URL
      *
@@ -58,8 +53,10 @@ class ControllerUtils
      */
     public function forward($controller, array $path = array(), array $query = array())
     {
+        $request = $this->container->get('request_stack')->getCurrentRequest();
+        $path['_forwarded'] = $request->attributes;
         $path['_controller'] = $controller;
-        $subRequest = $this->container->get('request')->duplicate($query, null, $path);
+        $subRequest = $request->duplicate($query, null, $path);
 
         return $this->container->get('http_kernel')->handle($subRequest, HttpKernelInterface::SUB_REQUEST);
     }
@@ -67,8 +64,8 @@ class ControllerUtils
     /**
      * Returns a RedirectResponse to the given URL.
      *
-     * @param string  $url    The URL to redirect to
-     * @param integer $status The status code to use for the Response
+     * @param string $url    The URL to redirect to
+     * @param int    $status The status code to use for the Response
      *
      * @return RedirectResponse
      */
@@ -78,18 +75,93 @@ class ControllerUtils
     }
 
     /**
-     * Redirect to a route.
+     * Returns a RedirectResponse to the given route with the given parameters.
      *
-     * @param string         $route         The name of the route
-     * @param mixed          $parameters    An array of parameters
-     * @param bool|string    $referenceType The type of reference (one of the constants in UrlGeneratorInterface)
-     * @param integer        $status        The status code to use for the Response
+     * @param string $route      The name of the route
+     * @param array  $parameters An array of parameters
+     * @param int    $status     The status code to use for the Response
      *
      * @return RedirectResponse
      */
-    public function redirectRoute($route, $parameters = array(), $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH, $status = 302)
+    public function redirectToRoute($route, array $parameters = array(), $status = 302)
     {
-        return $this->redirect($this->generateUrl($route, $parameters, $referenceType), $status);
+        return $this->redirect($this->generateUrl($route, $parameters), $status);
+    }
+
+    /**
+     * Returns a JsonResponse that uses the serializer component if enabled, or json_encode.
+     *
+     * @param mixed $data    The response data
+     * @param int   $status  The status code to use for the Response
+     * @param array $headers Array of extra headers to add
+     * @param array $context Context to pass to serializer when using serializer component
+     *
+     * @return JsonResponse
+     */
+    public function json($data, $status = 200, $headers = array(), $context = array())
+    {
+        if ($this->container->has('serializer')) {
+            $json = $this->container->get('serializer')->serialize($data, 'json', array_merge(array(
+                'json_encode_options' => JsonResponse::DEFAULT_ENCODING_OPTIONS,
+            ), $context));
+
+            return new JsonResponse($json, $status, $headers, true);
+        }
+
+        return new JsonResponse($data, $status, $headers);
+    }
+
+    /**
+     * Adds a flash message to the current session for type.
+     *
+     * @param string $type    The type
+     * @param string $message The message
+     *
+     * @throws \LogicException
+     */
+    public function addFlash($type, $message)
+    {
+        if (!$this->container->has('session')) {
+            throw new \LogicException('You can not use the addFlash method if sessions are disabled.');
+        }
+
+        $this->container->get('session')->getFlashBag()->add($type, $message);
+    }
+
+    /**
+     * Checks if the attributes are granted against the current authentication token and optionally supplied object.
+     *
+     * @param mixed $attributes The attributes
+     * @param mixed $object     The object
+     *
+     * @return bool
+     *
+     * @throws \LogicException
+     */
+    public function isGranted($attributes, $object = null)
+    {
+        if (!$this->container->has('security.authorization_checker')) {
+            throw new \LogicException('The SecurityBundle is not registered in your application.');
+        }
+
+        return $this->container->get('security.authorization_checker')->isGranted($attributes, $object);
+    }
+
+    /**
+     * Throws an exception unless the attributes are granted against the current authentication token and optionally
+     * supplied object.
+     *
+     * @param mixed  $attributes The attributes
+     * @param mixed  $object     The object
+     * @param string $message    The message passed to the exception
+     *
+     * @throws AccessDeniedException
+     */
+    public function denyAccessUnlessGranted($attributes, $object = null, $message = 'Access Denied.')
+    {
+        if (!$this->isGranted($attributes, $object)) {
+            throw $this->createAccessDeniedException($message);
+        }
     }
 
     /**
@@ -102,7 +174,15 @@ class ControllerUtils
      */
     public function renderView($view, array $parameters = array())
     {
-        return $this->container->get('templating')->render($view, $parameters);
+        if ($this->container->has('templating')) {
+            return $this->container->get('templating')->render($view, $parameters);
+        }
+
+        if (!$this->container->has('twig')) {
+            throw new \LogicException('You can not use the "renderView" method if the Templating Component or the Twig Bundle are not available.');
+        }
+
+        return $this->container->get('twig')->render($view, $parameters);
     }
 
     /**
@@ -116,7 +196,21 @@ class ControllerUtils
      */
     public function render($view, array $parameters = array(), Response $response = null)
     {
-        return $this->container->get('templating')->renderResponse($view, $parameters, $response);
+        if ($this->container->has('templating')) {
+            return $this->container->get('templating')->renderResponse($view, $parameters, $response);
+        }
+
+        if (!$this->container->has('twig')) {
+            throw new \LogicException('You can not use the "render" method if the Templating Component or the Twig Bundle are not available.');
+        }
+
+        if (null === $response) {
+            $response = new Response();
+        }
+
+        $response->setContent($this->container->get('twig')->render($view, $parameters));
+
+        return $response;
     }
 
     /**
@@ -130,11 +224,21 @@ class ControllerUtils
      */
     public function stream($view, array $parameters = array(), StreamedResponse $response = null)
     {
-        $templating = $this->container->get('templating');
+        if ($this->container->has('templating')) {
+            $templating = $this->container->get('templating');
 
-        $callback = function () use ($templating, $view, $parameters) {
-            $templating->stream($view, $parameters);
-        };
+            $callback = function () use ($templating, $view, $parameters) {
+                $templating->stream($view, $parameters);
+            };
+        } elseif ($this->container->has('twig')) {
+            $twig = $this->container->get('twig');
+
+            $callback = function () use ($twig, $view, $parameters) {
+                $twig->display($view, $parameters);
+            };
+        } else {
+            throw new \LogicException('You can not use the "stream" method if the Templating Component or the Twig Bundle are not available.');
+        }
 
         if (null === $response) {
             return new StreamedResponse($callback);
@@ -152,8 +256,8 @@ class ControllerUtils
      *
      *     throw $this->createNotFoundException('Page not found!');
      *
-     * @param string    $message  A message
-     * @param \Exception $previous The previous exception
+     * @param string          $message  A message
+     * @param \Exception|null $previous The previous exception
      *
      * @return NotFoundHttpException
      */
@@ -163,28 +267,28 @@ class ControllerUtils
     }
 
     /**
-     * Returns an AccessDeniedHttpException.
+     * Returns an AccessDeniedException.
      *
      * This will result in a 403 response code. Usage example:
      *
-     *     throw $this->utils->createAccessDeniedException();
+     *     throw $this->createAccessDeniedException('Unable to access this page!');
      *
-     * @param string    $message  A message
-     * @param \Exception $previous The previous exception
+     * @param string          $message  A message
+     * @param \Exception|null $previous The previous exception
      *
-     * @return AccessDeniedHttpException
+     * @return AccessDeniedException
      */
-    public function createAccessDeniedException($message = 'Access Denied', \Exception $previous = null)
+    public function createAccessDeniedException($message = 'Access Denied.', \Exception $previous = null)
     {
-        return new AccessDeniedHttpException($message, $previous);
+        return new AccessDeniedException($message, $previous);
     }
 
     /**
      * Creates and returns a Form instance from the type of the form.
      *
-     * @param string|FormTypeInterface $type    The built type of the form
-     * @param mixed                    $data    The initial data for the form
-     * @param array                    $options Options for the form
+     * @param string $type    The fully qualified class name of the form type
+     * @param mixed  $data    The initial data for the form
+     * @param array  $options Options for the form
      *
      * @return Form
      */
@@ -194,90 +298,111 @@ class ControllerUtils
     }
 
     /**
-     * Get a user from the Security Context
+     * Creates and returns a form builder instance.
      *
-     * @return UserInterface|null
+     * @param mixed $data    The initial data for the form
+     * @param array $options Options for the form
+     *
+     * @return FormBuilder
+     */
+    public function createFormBuilder($data = null, array $options = array())
+    {
+        return $this->container->get('form.factory')->createBuilder(FormType::class, $data, $options);
+    }
+
+    /**
+     * Shortcut to return the Doctrine Registry service.
+     *
+     * @return Registry
+     *
+     * @throws \LogicException If DoctrineBundle is not available
+     */
+    public function getDoctrine()
+    {
+        if (!$this->container->has('doctrine')) {
+            throw new \LogicException('The DoctrineBundle is not registered in your application.');
+        }
+
+        return $this->container->get('doctrine');
+    }
+
+    /**
+     * Get a user from the Security Token Storage.
+     *
+     * @return mixed
      *
      * @throws \LogicException If SecurityBundle is not available
      *
-     * @see Symfony\Component\Security\Core\Authentication\Token\TokenInterface::getUser()
+     * @see TokenInterface::getUser()
      */
     public function getUser()
     {
-        if (!$this->container->has('security.context')) {
+        if (!$this->container->has('security.token_storage')) {
             throw new \LogicException('The SecurityBundle is not registered in your application.');
         }
 
-        if (null === $token = $this->container->get('security.context')->getToken()) {
-            return null;
+        if (null === $token = $this->container->get('security.token_storage')->getToken()) {
+            return;
         }
 
         if (!is_object($user = $token->getUser())) {
-            return null;
+            // e.g. anonymous authentication
+            return;
         }
 
         return $user;
     }
 
     /**
-     * Checks if the attributes are granted against the current token.
+     * Returns true if the service id is defined.
      *
-     * @param mixed      $attributes
-     * @param mixed|null $object
+     * @param string $id The service id
+     *
+     * @return bool true if the service id is defined, false otherwise
+     */
+    public function has($id)
+    {
+        return $this->container->has($id);
+    }
+
+    /**
+     * Gets a container service by its id.
+     *
+     * @param string $id The service id
+     *
+     * @return object The service
+     */
+    public function get($id)
+    {
+        return $this->container->get($id);
+    }
+
+    /**
+     * Gets a container configuration parameter by its name.
+     *
+     * @param string $name The parameter name
+     *
+     * @return mixed
+     */
+    public function getParameter($name)
+    {
+        return $this->container->getParameter($name);
+    }
+
+    /**
+     * Checks the validity of a CSRF token.
+     *
+     * @param string $id    The id used when generating the token
+     * @param string $token The actual token sent with the request that should be validated
      *
      * @return bool
      */
-    public function isGranted($attributes, $object = null)
+    public function isCsrfTokenValid($id, $token)
     {
-        if (!$this->container->has('security.context')) {
-            throw new \LogicException('The SecurityBundle is not registered in your application.');
+        if (!$this->container->has('security.csrf.token_manager')) {
+            throw new \LogicException('CSRF protection is not enabled in your application.');
         }
 
-        return $this->container->get('security.context')->isGranted($attributes, $object);
-    }
-
-    /**
-     * Translate a message using the given substitution parameters.
-     *
-     * @param string $message
-     * @param array $params
-     * @return string
-     */
-    public function translate($message, array $params = array())
-    {
-        return $this->container->get('translator')->trans($message, $params);
-    }
-
-    /**
-     * Adds a flash message for type.
-     *
-     * @param string $type
-     * @param string $message
-     */
-    public function addFlash($type, $message)
-    {
-        $this->container->get('session')->getFlashBag()->add($type, $message);
-    }
-
-    /**
-     * Registers a flash message for a given type.
-     *
-     * @param string       $type
-     * @param string|array $message
-     */
-    public function setFlash($type, $message)
-    {
-        $this->container->get('session')->getFlashBag()->set($type, $message);
-    }
-
-    /**
-     * Return a JSON Response with given data.
-     *
-     * @param array|object $data
-     * @return JsonResponse
-     */
-    public function json($data)
-    {
-        return new JsonResponse($data);
+        return $this->container->get('security.csrf.token_manager')->isTokenValid(new CsrfToken($id, $token));
     }
 }
