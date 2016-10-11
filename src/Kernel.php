@@ -83,4 +83,9 @@ abstract class Kernel extends BaseKernel
     {
         return getenv('VAGRANT') == true && is_dir($this->vagrantTmpDir);
     }
+
+    /**
+     * @return Kernel
+     */
+    public abstract static function fromEnvironment();
 }
