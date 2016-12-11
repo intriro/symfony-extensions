@@ -1,6 +1,7 @@
 <?php
 namespace Intriro\Symfony;
 
+use Symfony\Component\Debug\Debug;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Config\Loader\LoaderInterface;
 
@@ -87,5 +88,15 @@ abstract class Kernel extends BaseKernel
     /**
      * @return Kernel
      */
-    public abstract static function fromEnvironment();
+    public static function fromEnvironment()
+    {
+        if (EnvHelper::isDevelopmentEnvironment()) {
+            Debug::enable();
+        }
+
+        return new static(
+            EnvHelper::getEnv(),
+            EnvHelper::isDebugEnabled()
+        );
+    }
 }

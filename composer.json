@@ -1,7 +1,7 @@
 {
     "name" : "intriro/symfony-extensions",
-    "license" : "proprietary",
-    "type" : "symfony-bundle",
+    "license" : "MIT",
+    "type" : "library",
     "description" : "Symfony extensions",
     "keywords" : [],
     "authors" : [{
@@ -27,7 +27,7 @@
     },
     "extra" : {
         "branch-alias" : {
-            "dev-master" : "0.4.x-dev"
+            "dev-master" : "0.6.x-dev"
         }
     }
 }
