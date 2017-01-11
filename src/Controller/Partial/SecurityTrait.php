@@ -14,32 +14,6 @@ use Symfony\Component\Security\Core\User\UserInterface;
 trait SecurityTrait
 {
     /**
-     * Get a user from the Security Token Storage.
-     *
-     * @return UserInterface|null
-     *
-     * @throws \LogicException If SecurityBundle is not available
-     *
-     * @see TokenInterface::getUser()
-     */
-    public function getUser(): ?UserInterface
-    {
-        if (!$this->container->has('security.token_storage')) {
-            throw new \LogicException('The SecurityBundle is not registered in your application.');
-        }
-
-        if (null === $token = $this->container->get('security.token_storage')->getToken()) {
-            return null;
-        }
-
-        if (!is_object($user = $token->getUser())) {
-            return null;
-        }
-
-        return $user;
-    }
-
-    /**
      * @return TokenStorageInterface|null
      *
      * @throws \LogicException If SecurityBundle is not available
