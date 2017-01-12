@@ -1,21 +1,24 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Intriro\Symfony;
 
+use Doctrine\Bundle\DoctrineBundle\Registry;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\HttpKernelInterface;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormBuilder;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Doctrine\Bundle\DoctrineBundle\Registry;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Security\Csrf\CsrfToken;
 
 /**
  * Controller Utilities Service.
@@ -39,7 +42,7 @@ class ControllerUtils implements ContainerAwareInterface
      *
      * @see UrlGeneratorInterface
      */
-    public function generateUrl($route, $parameters = array(), $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH)
+    public function generateUrl($route, $parameters = [], $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH)
     {
         return $this->container->get('router')->generate($route, $parameters, $referenceType);
     }
@@ -53,7 +56,7 @@ class ControllerUtils implements ContainerAwareInterface
      *
      * @return Response A Response instance
      */
-    public function forward($controller, array $path = array(), array $query = array())
+    public function forward($controller, array $path = [], array $query = [])
     {
         $request = $this->container->get('request_stack')->getCurrentRequest();
         $path['_forwarded'] = $request->attributes;
@@ -85,7 +88,7 @@ class ControllerUtils implements ContainerAwareInterface
      *
      * @return RedirectResponse
      */
-    public function redirectToRoute($route, array $parameters = array(), $status = 302)
+    public function redirectToRoute($route, array $parameters = [], $status = 302)
     {
         return $this->redirect($this->generateUrl($route, $parameters), $status);
     }
@@ -100,12 +103,12 @@ class ControllerUtils implements ContainerAwareInterface
      *
      * @return JsonResponse
      */
-    public function json($data, $status = 200, $headers = array(), $context = array())
+    public function json($data, $status = 200, $headers = [], $context = [])
     {
         if ($this->container->has('serializer')) {
-            $json = $this->container->get('serializer')->serialize($data, 'json', array_merge(array(
+            $json = $this->container->get('serializer')->serialize($data, 'json', array_merge([
                 'json_encode_options' => JsonResponse::DEFAULT_ENCODING_OPTIONS,
-            ), $context));
+            ], $context));
 
             return new JsonResponse($json, $status, $headers, true);
         }
@@ -174,7 +177,7 @@ class ControllerUtils implements ContainerAwareInterface
      *
      * @return string The rendered view
      */
-    public function renderView($view, array $parameters = array())
+    public function renderView($view, array $parameters = [])
     {
         if ($this->container->has('templating')) {
             return $this->container->get('templating')->render($view, $parameters);
@@ -196,7 +199,7 @@ class ControllerUtils implements ContainerAwareInterface
      *
      * @return Response A Response instance
      */
-    public function render($view, array $parameters = array(), Response $response = null)
+    public function render($view, array $parameters = [], Response $response = null)
     {
         if ($this->container->has('templating')) {
             return $this->container->get('templating')->renderResponse($view, $parameters, $response);
@@ -224,7 +227,7 @@ class ControllerUtils implements ContainerAwareInterface
      *
      * @return StreamedResponse A StreamedResponse instance
      */
-    public function stream($view, array $parameters = array(), StreamedResponse $response = null)
+    public function stream($view, array $parameters = [], StreamedResponse $response = null)
     {
         if ($this->container->has('templating')) {
             $templating = $this->container->get('templating');
@@ -294,7 +297,7 @@ class ControllerUtils implements ContainerAwareInterface
      *
      * @return Form
      */
-    public function createForm($type, $data = null, array $options = array())
+    public function createForm($type, $data = null, array $options = [])
     {
         return $this->container->get('form.factory')->create($type, $data, $options);
     }
@@ -307,7 +310,7 @@ class ControllerUtils implements ContainerAwareInterface
      *
      * @return FormBuilder
      */
-    public function createFormBuilder($data = null, array $options = array())
+    public function createFormBuilder($data = null, array $options = [])
     {
         return $this->container->get('form.factory')->createBuilder(FormType::class, $data, $options);
     }

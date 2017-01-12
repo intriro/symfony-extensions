@@ -1,29 +1,31 @@
 <?php
-namespace Intriro\Symfony;
 
+declare(strict_types=1);
+
+namespace Intriro\Symfony;
 
 class EnvHelper
 {
     /**
      * @return string
      */
-    public static function getEnv()
+    public static function getEnv(): string
     {
         return getenv('SYMFONY_ENV') ?: 'prod';
     }
 
     /**
-     * @return string
+     * @return bool
      */
-    public static function isProductionEnvironment()
+    public static function isProductionEnvironment(): bool
     {
-        return self::getEnv() == 'prod';
+        return self::getEnv() === 'prod';
     }
 
     /**
-     * @return string
+     * @return bool
      */
-    public static function isDevelopmentEnvironment()
+    public static function isDevelopmentEnvironment(): bool
     {
         return !self::isProductionEnvironment();
     }
@@ -31,7 +33,7 @@ class EnvHelper
     /**
      * @return bool
      */
-    public static function isDebugEnabled()
+    public static function isDebugEnabled(): bool
     {
         return (bool) getenv('SYMFONY_DEBUG');
     }

@@ -1,10 +1,9 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 
 namespace Intriro\Symfony\Controller\Partial;
 
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormBuilder;
@@ -20,7 +19,7 @@ trait FormTrait
      *
      * @return Form
      */
-    public function createForm($type, $data = null, array $options = array())
+    public function createForm($type, $data = null, array $options = [])
     {
         return $this->container->get('form.factory')->create($type, $data, $options);
     }
@@ -33,7 +32,7 @@ trait FormTrait
      *
      * @return FormBuilder
      */
-    public function createFormBuilder($data = null, array $options = array())
+    public function createFormBuilder($data = null, array $options = [])
     {
         return $this->container->get('form.factory')->createBuilder(FormType::class, $data, $options);
     }

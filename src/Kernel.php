@@ -1,9 +1,12 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Intriro\Symfony;
 
+use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\Debug\Debug;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
-use Symfony\Component\Config\Loader\LoaderInterface;
 
 abstract class Kernel extends BaseKernel
 {
@@ -39,7 +42,7 @@ abstract class Kernel extends BaseKernel
     {
         $extraParameters = [
             'kernel.var_dir' => $this->getVarDir(),
-            'kernel.resource_dir' => $this->getResourceDir()
+            'kernel.resource_dir' => $this->getResourceDir(),
         ];
 
         return array_merge($extraParameters, parent::getKernelParameters());
@@ -51,7 +54,7 @@ abstract class Kernel extends BaseKernel
     public function getCacheDir()
     {
         if ($this->isVagrantEnvironment()) {
-            return $this->vagrantTmpDir . '/sf/cache/' . $this->environment;
+            return $this->vagrantTmpDir.'/sf/cache/'.$this->environment;
         }
 
         return $this->getVarDir().'/cache/'.$this->environment;
@@ -63,7 +66,7 @@ abstract class Kernel extends BaseKernel
     public function getLogDir()
     {
         if ($this->isVagrantEnvironment()) {
-            return $this->vagrantTmpDir . '/sf/logs';
+            return $this->vagrantTmpDir.'/sf/logs';
         }
 
         return $this->getVarDir().'/logs';
@@ -78,11 +81,11 @@ abstract class Kernel extends BaseKernel
     }
 
     /**
-     * @return boolean
+     * @return bool
      */
     protected function isVagrantEnvironment()
     {
-        return getenv('VAGRANT') == true && is_dir($this->vagrantTmpDir);
+        return getenv('VAGRANT') === true && is_dir($this->vagrantTmpDir);
     }
 
     /**

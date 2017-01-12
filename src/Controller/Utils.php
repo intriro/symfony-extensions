@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Intriro\Symfony\Controller;
 
 use Intriro\Symfony\Controller\Partial\FormTrait;
