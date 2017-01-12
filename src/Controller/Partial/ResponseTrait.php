@@ -203,22 +203,6 @@ trait ResponseTrait
 
         return $response;
     }
-    /**
-     * Adds a flash message to the current session for type.
-     *
-     * @param string $type    The type
-     * @param string $message The message
-     *
-     * @throws \LogicException
-     */
-    public function addFlash($type, $message)
-    {
-        if (!$this->container->has('session')) {
-            throw new \LogicException('You can not use the addFlash method if sessions are disabled.');
-        }
-
-        $this->container->get('session')->getFlashBag()->add($type, $message);
-    }
 
     /**
      * Returns a NotFoundHttpException.
