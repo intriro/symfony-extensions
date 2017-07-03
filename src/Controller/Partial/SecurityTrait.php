@@ -48,7 +48,7 @@ trait SecurityTrait
      *
      * @throws \LogicException
      */
-    protected function isGranted($attributes, $object = null)
+    public function isGranted($attributes, $object = null)
     {
         if (!$this->container->has('security.authorization_checker')) {
             throw new \LogicException('The SecurityBundle is not registered in your application.');
@@ -67,7 +67,7 @@ trait SecurityTrait
      *
      * @throws AccessDeniedException
      */
-    protected function denyAccessUnlessGranted($attributes, $object = null, $message = 'Access Denied.')
+    public function denyAccessUnlessGranted($attributes, $object = null, $message = 'Access Denied.')
     {
         if (!$this->isGranted($attributes, $object)) {
             $exception = $this->createAccessDeniedException($message);
@@ -90,7 +90,7 @@ trait SecurityTrait
      *
      * @return AccessDeniedException
      */
-    protected function createAccessDeniedException($message = 'Access Denied.', \Exception $previous = null)
+    public function createAccessDeniedException($message = 'Access Denied.', \Exception $previous = null)
     {
         return new AccessDeniedException($message, $previous);
     }
