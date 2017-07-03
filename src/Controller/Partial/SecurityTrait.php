@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Intriro\Symfony\Controller\Partial;
 
-use Symfony\Component\Finder\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 trait SecurityTrait
 {
