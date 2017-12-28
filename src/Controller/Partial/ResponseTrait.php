@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Intriro\Symfony\Controller\Partial;
 
+use Psr\Container\ContainerInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -14,20 +15,19 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
+/**
+ * @property ContainerInterface $container
+ */
 trait ResponseTrait
 {
     /**
      * Generates a URL from the given parameters.
      *
-     * @param string $route         The name of the route
-     * @param mixed  $parameters    An array of parameters
-     * @param int    $referenceType The type of reference (one of the constants in UrlGeneratorInterface)
-     *
-     * @return string The generated URL
-     *
      * @see UrlGeneratorInterface
+     *
+     * @final since version 3.4
      */
-    public function generateUrl($route, $parameters = [], $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH)
+    protected function generateUrl(string $route, array $parameters = [], int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): string
     {
         return $this->container->get('router')->generate($route, $parameters, $referenceType);
     }
@@ -36,12 +36,10 @@ trait ResponseTrait
      * Forwards the request to another controller.
      *
      * @param string $controller The controller name (a string like BlogBundle:Post:index)
-     * @param array  $path       An array of path parameters
-     * @param array  $query      An array of query parameters
      *
-     * @return Response A Response instance
+     * @final since version 3.4
      */
-    public function forward($controller, array $path = [], array $query = [])
+    protected function forward(string $controller, array $path = [], array $query = []): Response
     {
         $request = $this->container->get('request_stack')->getCurrentRequest();
         $path['_forwarded'] = $request->attributes;
@@ -54,12 +52,9 @@ trait ResponseTrait
     /**
      * Returns a RedirectResponse to the given URL.
      *
-     * @param string $url    The URL to redirect to
-     * @param int    $status The status code to use for the Response
-     *
-     * @return RedirectResponse
+     * @final since version 3.4
      */
-    public function redirect($url, $status = 302)
+    protected function redirect(string $url, int $status = 302): RedirectResponse
     {
         return new RedirectResponse($url, $status);
     }
@@ -67,13 +62,9 @@ trait ResponseTrait
     /**
      * Returns a RedirectResponse to the given route with the given parameters.
      *
-     * @param string $route      The name of the route
-     * @param array  $parameters An array of parameters
-     * @param int    $status     The status code to use for the Response
-     *
-     * @return RedirectResponse
+     * @final since version 3.4
      */
-    public function redirectToRoute($route, array $parameters = [], $status = 302)
+    protected function redirectToRoute(string $route, array $parameters = [], int $status = 302): RedirectResponse
     {
         return $this->redirect($this->generateUrl($route, $parameters), $status);
     }
@@ -81,14 +72,9 @@ trait ResponseTrait
     /**
      * Returns a JsonResponse that uses the serializer component if enabled, or json_encode.
      *
-     * @param mixed $data    The response data
-     * @param int   $status  The status code to use for the Response
-     * @param array $headers Array of extra headers to add
-     * @param array $context Context to pass to serializer when using serializer component
-     *
-     * @return JsonResponse
+     * @final since version 3.4
      */
-    public function json($data, $status = 200, $headers = [], $context = [])
+    protected function json($data, int $status = 200, array $headers = [], array $context = []): JsonResponse
     {
         if ($this->container->has('serializer')) {
             $json = $this->container->get('serializer')->serialize($data, 'json', array_merge([
@@ -104,16 +90,14 @@ trait ResponseTrait
     /**
      * Returns a BinaryFileResponse object with original or customized file name and disposition header.
      *
-     * @param \SplFileInfo|string $file        File object or path to file to be sent as response
-     * @param string|null         $fileName    File name to be sent to response or null (will use original file name)
-     * @param string              $disposition Disposition of response ("attachment" is default, other type is "inline")
+     * @param \SplFileInfo|string $file File object or path to file to be sent as response
      *
-     * @return BinaryFileResponse
+     * @final since version 3.4
      */
-    protected function file($file, $fileName = null, $disposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT)
+    protected function file($file, string $fileName = null, string $disposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT): BinaryFileResponse
     {
         $response = new BinaryFileResponse($file);
-        $response->setContentDisposition($disposition, $fileName === null ? $response->getFile()->getFilename() : $fileName);
+        $response->setContentDisposition($disposition, null === $fileName ? $response->getFile()->getFilename() : $fileName);
 
         return $response;
     }
@@ -121,12 +105,9 @@ trait ResponseTrait
     /**
      * Returns a rendered view.
      *
-     * @param string $view       The view name
-     * @param array  $parameters An array of parameters to pass to the view
-     *
-     * @return string The rendered view
+     * @final since version 3.4
      */
-    public function renderView($view, array $parameters = [])
+    protected function renderView(string $view, array $parameters = []): string
     {
         if ($this->container->has('templating')) {
             return $this->container->get('templating')->render($view, $parameters);
@@ -142,19 +123,15 @@ trait ResponseTrait
     /**
      * Renders a view.
      *
-     * @param string   $view       The view name
-     * @param array    $parameters An array of parameters to pass to the view
-     * @param Response $response   A response instance
-     *
-     * @return Response A Response instance
+     * @final since version 3.4
      */
-    public function render($view, array $parameters = [], Response $response = null)
+    protected function render(string $view, array $parameters = [], Response $response = null): Response
     {
         if ($this->container->has('templating')) {
-            return $this->container->get('templating')->renderResponse($view, $parameters, $response);
-        }
-
-        if (!$this->container->has('twig')) {
+            $content = $this->container->get('templating')->render($view, $parameters);
+        } elseif ($this->container->has('twig')) {
+            $content = $this->container->get('twig')->render($view, $parameters);
+        } else {
             throw new \LogicException('You can not use the "render" method if the Templating Component or the Twig Bundle are not available.');
         }
 
@@ -162,7 +139,7 @@ trait ResponseTrait
             $response = new Response();
         }
 
-        $response->setContent($this->container->get('twig')->render($view, $parameters));
+        $response->setContent($content);
 
         return $response;
     }
@@ -170,13 +147,9 @@ trait ResponseTrait
     /**
      * Streams a view.
      *
-     * @param string           $view       The view name
-     * @param array            $parameters An array of parameters to pass to the view
-     * @param StreamedResponse $response   A response instance
-     *
-     * @return StreamedResponse A StreamedResponse instance
+     * @final since version 3.4
      */
-    public function stream($view, array $parameters = [], StreamedResponse $response = null)
+    protected function stream(string $view, array $parameters = [], StreamedResponse $response = null): StreamedResponse
     {
         if ($this->container->has('templating')) {
             $templating = $this->container->get('templating');
@@ -210,12 +183,9 @@ trait ResponseTrait
      *
      *     throw $this->createNotFoundException('Page not found!');
      *
-     * @param string          $message  A message
-     * @param \Exception|null $previous The previous exception
-     *
-     * @return NotFoundHttpException
+     * @final since version 3.4
      */
-    public function createNotFoundException($message = 'Not Found', \Exception $previous = null)
+    protected function createNotFoundException(string $message = 'Not Found', \Exception $previous = null): NotFoundHttpException
     {
         return new NotFoundHttpException($message, $previous);
     }

@@ -16,18 +16,15 @@
     },
     "require" : {
         "php" : ">=7.1",
-        "symfony/http-kernel": "~2.7|~3.0",
-        "symfony/dependency-injection": "~2.7|~3.0",
-        "symfony/routing": "~2.7|~3.0",
-        "symfony/security": "~2.7|~3.0",
-        "symfony/form": "~2.7|~3.0"
+        "symfony/framework-bundle": "^3.4 || ^4.0"
     },
-    "config" : {
-        "bin-dir" : "bin"
+    "suggest" : {
+        "symfony/security": "^3.4 || ^4.0",
+        "symfony/form": "^3.4 || ^4.0"
     },
     "extra" : {
         "branch-alias" : {
-            "dev-master" : "0.7.x-dev"
+            "dev-master" : "1.0.0-dev"
         }
     }
 }

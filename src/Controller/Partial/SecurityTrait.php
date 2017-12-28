@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Intriro\Symfony\Controller\Partial;
 
+use Psr\Container\ContainerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
+/**
+ * @property ContainerInterface $container
+ */
 trait SecurityTrait
 {
     /**
@@ -39,40 +43,35 @@ trait SecurityTrait
     }
 
     /**
-     * Checks if the attributes are granted against the current authentication token and optionally supplied object.
-     *
-     * @param mixed $attributes The attributes
-     * @param mixed $object     The object
-     *
-     * @return bool
+     * Checks if the attributes are granted against the current authentication token and optionally supplied subject.
      *
      * @throws \LogicException
+     *
+     * @final since version 3.4
      */
-    public function isGranted($attributes, $object = null)
+    protected function isGranted($attributes, $subject = null): bool
     {
         if (!$this->container->has('security.authorization_checker')) {
             throw new \LogicException('The SecurityBundle is not registered in your application.');
         }
 
-        return $this->container->get('security.authorization_checker')->isGranted($attributes, $object);
+        return $this->container->get('security.authorization_checker')->isGranted($attributes, $subject);
     }
 
     /**
      * Throws an exception unless the attributes are granted against the current authentication token and optionally
-     * supplied object.
-     *
-     * @param mixed  $attributes The attributes
-     * @param mixed  $object     The object
-     * @param string $message    The message passed to the exception
+     * supplied subject.
      *
      * @throws AccessDeniedException
+     *
+     * @final since version 3.4
      */
-    public function denyAccessUnlessGranted($attributes, $object = null, $message = 'Access Denied.')
+    protected function denyAccessUnlessGranted($attributes, $subject = null, string $message = 'Access Denied.')
     {
-        if (!$this->isGranted($attributes, $object)) {
+        if (!$this->isGranted($attributes, $subject)) {
             $exception = $this->createAccessDeniedException($message);
             $exception->setAttributes($attributes);
-            $exception->setSubject($object);
+            $exception->setSubject($subject);
 
             throw $exception;
         }
@@ -85,12 +84,9 @@ trait SecurityTrait
      *
      *     throw $this->createAccessDeniedException('Unable to access this page!');
      *
-     * @param string          $message  A message
-     * @param \Exception|null $previous The previous exception
-     *
-     * @return AccessDeniedException
+     * @final since version 3.4
      */
-    public function createAccessDeniedException($message = 'Access Denied.', \Exception $previous = null)
+    protected function createAccessDeniedException(string $message = 'Access Denied.', \Exception $previous = null): AccessDeniedException
     {
         return new AccessDeniedException($message, $previous);
     }

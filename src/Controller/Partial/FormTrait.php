@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Intriro\Symfony\Controller\Partial;
 
+use Psr\Container\ContainerInterface;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
-use Symfony\Component\Form\Form;
-use Symfony\Component\Form\FormBuilder;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormInterface;
 
+/**
+ * @property ContainerInterface $container
+ */
 trait FormTrait
 {
     /**
      * Creates and returns a Form instance from the type of the form.
      *
-     * @param string $type    The fully qualified class name of the form type
-     * @param mixed  $data    The initial data for the form
-     * @param array  $options Options for the form
-     *
-     * @return Form
+     * @final since version 3.4
      */
-    public function createForm($type, $data = null, array $options = [])
+    protected function createForm(string $type, $data = null, array $options = []): FormInterface
     {
         return $this->container->get('form.factory')->create($type, $data, $options);
     }
@@ -27,12 +27,9 @@ trait FormTrait
     /**
      * Creates and returns a form builder instance.
      *
-     * @param mixed $data    The initial data for the form
-     * @param array $options Options for the form
-     *
-     * @return FormBuilder
+     * @final since version 3.4
      */
-    public function createFormBuilder($data = null, array $options = [])
+    protected function createFormBuilder($data = null, array $options = []): FormBuilderInterface
     {
         return $this->container->get('form.factory')->createBuilder(FormType::class, $data, $options);
     }
