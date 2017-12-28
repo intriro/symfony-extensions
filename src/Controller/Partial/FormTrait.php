@@ -19,7 +19,7 @@ trait FormTrait
      *
      * @final since version 3.4
      */
-    protected function createForm(string $type, $data = null, array $options = []): FormInterface
+    public function createForm(string $type, $data = null, array $options = []): FormInterface
     {
         return $this->container->get('form.factory')->create($type, $data, $options);
     }
@@ -29,7 +29,7 @@ trait FormTrait
      *
      * @final since version 3.4
      */
-    protected function createFormBuilder($data = null, array $options = []): FormBuilderInterface
+    public function createFormBuilder($data = null, array $options = []): FormBuilderInterface
     {
         return $this->container->get('form.factory')->createBuilder(FormType::class, $data, $options);
     }

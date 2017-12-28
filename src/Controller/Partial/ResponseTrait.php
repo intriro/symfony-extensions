@@ -27,7 +27,7 @@ trait ResponseTrait
      *
      * @final since version 3.4
      */
-    protected function generateUrl(string $route, array $parameters = [], int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): string
+    public function generateUrl(string $route, array $parameters = [], int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): string
     {
         return $this->container->get('router')->generate($route, $parameters, $referenceType);
     }
@@ -39,7 +39,7 @@ trait ResponseTrait
      *
      * @final since version 3.4
      */
-    protected function forward(string $controller, array $path = [], array $query = []): Response
+    public function forward(string $controller, array $path = [], array $query = []): Response
     {
         $request = $this->container->get('request_stack')->getCurrentRequest();
         $path['_forwarded'] = $request->attributes;
@@ -54,7 +54,7 @@ trait ResponseTrait
      *
      * @final since version 3.4
      */
-    protected function redirect(string $url, int $status = 302): RedirectResponse
+    public function redirect(string $url, int $status = 302): RedirectResponse
     {
         return new RedirectResponse($url, $status);
     }
@@ -64,7 +64,7 @@ trait ResponseTrait
      *
      * @final since version 3.4
      */
-    protected function redirectToRoute(string $route, array $parameters = [], int $status = 302): RedirectResponse
+    public function redirectToRoute(string $route, array $parameters = [], int $status = 302): RedirectResponse
     {
         return $this->redirect($this->generateUrl($route, $parameters), $status);
     }
@@ -74,7 +74,7 @@ trait ResponseTrait
      *
      * @final since version 3.4
      */
-    protected function json($data, int $status = 200, array $headers = [], array $context = []): JsonResponse
+    public function json($data, int $status = 200, array $headers = [], array $context = []): JsonResponse
     {
         if ($this->container->has('serializer')) {
             $json = $this->container->get('serializer')->serialize($data, 'json', array_merge([
@@ -94,7 +94,7 @@ trait ResponseTrait
      *
      * @final since version 3.4
      */
-    protected function file($file, string $fileName = null, string $disposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT): BinaryFileResponse
+    public function file($file, string $fileName = null, string $disposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT): BinaryFileResponse
     {
         $response = new BinaryFileResponse($file);
         $response->setContentDisposition($disposition, null === $fileName ? $response->getFile()->getFilename() : $fileName);
@@ -107,7 +107,7 @@ trait ResponseTrait
      *
      * @final since version 3.4
      */
-    protected function renderView(string $view, array $parameters = []): string
+    public function renderView(string $view, array $parameters = []): string
     {
         if ($this->container->has('templating')) {
             return $this->container->get('templating')->render($view, $parameters);
@@ -125,7 +125,7 @@ trait ResponseTrait
      *
      * @final since version 3.4
      */
-    protected function render(string $view, array $parameters = [], Response $response = null): Response
+    public function render(string $view, array $parameters = [], Response $response = null): Response
     {
         if ($this->container->has('templating')) {
             $content = $this->container->get('templating')->render($view, $parameters);
@@ -149,7 +149,7 @@ trait ResponseTrait
      *
      * @final since version 3.4
      */
-    protected function stream(string $view, array $parameters = [], StreamedResponse $response = null): StreamedResponse
+    public function stream(string $view, array $parameters = [], StreamedResponse $response = null): StreamedResponse
     {
         if ($this->container->has('templating')) {
             $templating = $this->container->get('templating');
@@ -185,7 +185,7 @@ trait ResponseTrait
      *
      * @final since version 3.4
      */
-    protected function createNotFoundException(string $message = 'Not Found', \Exception $previous = null): NotFoundHttpException
+    public function createNotFoundException(string $message = 'Not Found', \Exception $previous = null): NotFoundHttpException
     {
         return new NotFoundHttpException($message, $previous);
     }
